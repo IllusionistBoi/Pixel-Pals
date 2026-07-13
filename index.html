@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07070f" />
+  <title>Pixel Pals — a retro arcade maze chase powered by a real BFS</title>
+  <meta name="description" content="A retro Pac-Man-style arcade cabinet: clear the neon maze while four ghosts hunt you with a real breadth-first search." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* High-score initials entry (scoped here to stay out of the main stylesheet) */
+    .initials { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 2px 0 4px; }
+    .initials label { font-size: 12px; letter-spacing: 0.18em; color: var(--cyan, #33e4ff); }
+    .initials-input {
+      width: 4.5ch; font-family: var(--mono, ui-monospace, monospace); font-size: 34px; font-weight: 700;
+      text-align: center; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--neon, #ffce00); background: rgba(255, 206, 0, 0.08);
+      border: 2px solid var(--neon, #ffce00); border-radius: 6px; padding: 6px 4px; caret-color: var(--neon, #ffce00);
+    }
+    .initials-input:focus { outline: none; box-shadow: 0 0 16px rgba(255, 206, 0, 0.6); }
+  </style>
+</head>
+<body>
+  <main class="cab">
+    <!-- Marquee -->
+    <header class="marquee">
+      <span class="marquee__ghost g-red"></span>
+      <h1 class="logo">PIXEL&nbsp;PALS</h1>
+      <span class="marquee__ghost g-cyan"></span>
+    </header>
+
+    <!-- Cabinet screen / CRT -->
+    <div class="cabinet">
+      <div class="crt">
+        <div class="hud hud--top">
+          <div class="hud__col"><span class="hud__label hud__label--1up">1UP</span><span class="hud__val" id="hud-score">0</span></div>
+          <div class="hud__col hud__col--center"><span class="hud__label">HIGH&nbsp;SCORE</span><span class="hud__val" id="hud-best">0</span></div>
+          <div class="hud__col hud__col--right"><span class="hud__label" id="hud-difftab">NORMAL</span><span class="hud__val hud__val--sm">LVL <i id="hud-level">1</i></span></div>
+        </div>
+
+        <div class="screenwrap">
+          <canvas id="stage" aria-label="Pixel Pals arcade board"></canvas>
+        </div>
+
+        <div class="hud hud--bottom">
+          <div class="lives" id="lives"></div>
+          <div class="credits">CREDIT <span id="credits">01</span></div>
+        </div>
+
+        <!-- Screen-reader announcements (Ready / Paused / Level clear / Game over) -->
+        <div id="live" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;"></div>
+
+        <!-- Full-screen overlays: cover the whole CRT (incl. HUD) so nothing overlaps -->
+        <div class="overlays">
+          <!-- TITLE / attract -->
+          <section class="ov ov--title" id="screen-title" role="dialog" aria-modal="true" aria-label="Pixel Pals title screen">
+            <h2 class="ov__logo">PIXEL PALS</h2>
+            <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
+            <div class="ghostrow">
+              <span class="grow g-red"></span><span class="gname">BLINKY</span>
+              <span class="grow g-pink"></span><span class="gname">PINKY</span>
+              <span class="grow g-cyan"></span><span class="gname">INKY</span>
+              <span class="grow g-orange"></span><span class="gname">CLYDE</span>
+            </div>
+            <button class="press" id="btn-start">PRESS&nbsp;START</button>
+            <div class="ov__links">
+              <button class="mini" id="btn-how">HOW TO PLAY</button>
+              <button class="mini" id="btn-mute-title">♪ SOUND</button>
+            </div>
+            <p class="coin" id="coin">INSERT COIN</p>
+          </section>
+
+          <!-- DIFFICULTY -->
+          <section class="ov ov--diff" id="screen-diff" hidden role="dialog" aria-modal="true" aria-label="Select difficulty">
+            <h2 class="ov__h">SELECT SPEED</h2>
+            <ul class="picks">
+              <li><button class="pick" data-diff="easy"><b>EASY</b><span>ghosts amble · take your time</span></button></li>
+              <li><button class="pick" data-diff="normal"><b>NORMAL</b><span>a fair hunt</span></button></li>
+              <li><button class="pick" data-diff="hard"><b>HARD</b><span>relentless — but beatable</span></button></li>
+            </ul>
+            <button class="mini" id="btn-back">◂ BACK</button>
+          </section>
+
+          <!-- PAUSE -->
+          <section class="ov ov--pause" id="screen-pause" hidden role="dialog" aria-modal="true" aria-label="Paused">
+            <h2 class="ov__h">PAUSED</h2>
+            <button class="press" id="btn-resume">RESUME</button>
+            <div class="ov__links">
+              <button class="mini" id="btn-restart">RESTART</button>
+              <button class="mini" id="btn-quit">QUIT</button>
+              <button class="mini" id="btn-mute">♪ MUTE</button>
+            </div>
+          </section>
+
+          <!-- GAME OVER -->
+          <section class="ov ov--over" id="screen-over" hidden role="dialog" aria-modal="true" aria-label="Game over">
+            <h2 class="ov__h ov__h--over">GAME&nbsp;OVER</h2>
+            <div class="over-score"><span>SCORE</span><b id="over-score">0</b></div>
+            <p class="over-rank" id="over-rank"></p>
+            <form class="initials" id="initials" hidden>
+              <label for="initials-input">ENTER YOUR INITIALS</label>
+              <input id="initials-input" class="initials-input" maxlength="3" autocomplete="off" spellcheck="false"
+                     inputmode="latin" aria-label="Enter three initials for the high-score table" />
+              <button class="mini" id="btn-initials-ok" type="submit">OK</button>
+            </form>
+            <ol class="board" id="board"></ol>
+            <button class="press" id="btn-again">PLAY&nbsp;AGAIN</button>
+            <button class="mini" id="btn-home">TITLE</button>
+          </section>
+
+          <!-- HOW TO -->
+          <section class="ov ov--help" id="screen-help" hidden role="dialog" aria-modal="true" aria-label="How to play">
+            <h2 class="ov__h">HOW TO PLAY</h2>
+            <ul class="how">
+              <li>◂ ▸ ▴ ▾ / WASD — move Pom around the neon maze.</li>
+              <li>Eat every <b class="c-dot">pellet</b> to clear the board.</li>
+              <li>Grab a flashing <b class="c-dot">power-pellet</b> and the ghosts turn blue — chase them down for 200 → 1600 pts.</li>
+              <li>Four ghosts hunt you with a real <b>breadth-first search</b>; the warp tunnels wrap left ↔ right.</li>
+              <li>SPACE pauses · M mutes.</li>
+            </ul>
+            <button class="press" id="btn-help-close">GOT IT</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control deck -->
+    <div class="deck">
+      <button class="joystick" id="joystick" type="button" aria-label="Move Pom"><span class="stick"></span></button>
+      <div class="btns">
+        <button class="ab a" type="button" aria-label="Start or confirm"></button>
+        <button class="ab b" type="button" aria-label="Pause or back"></button>
+      </div>
+      <button class="coinslot" type="button" aria-label="Insert coin"></button>
+    </div>
+    <p class="fineprint">© PIXEL PALS · from a C++ console game · made with a real BFS ♥</p>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/pathfinding.js"></script>
+  <script src="js/maze.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

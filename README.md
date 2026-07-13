@@ -1,44 +1,66 @@
-# Pixel-Pals
-Pixel Pals is a fun and engaging console game that I created using Python and Pygame. The game features colorful pixelated graphics and challenges players to navigate a character through a series of obstacles while collecting coins and power-ups.
+# Pixel Pals
 
-This is a C++ code that implements a console-based game where the player moves around a map and tries to collect all the dots while avoiding the enemy. The code uses the BFS algorithm to find the shortest path between the player and the enemy.
+**A retro Pac-Man-style arcade cabinet where four ghosts hunt you with a real breadth-first search.**
 
-***
-# Installation
-To run the game, follow these steps:
+Pixel Pals began as a Windows C++ console game — a maze of `#` and `.` where an
+`E` chased an `H` using BFS. This is that algorithm, grown from one hunter into
+four and dropped into a glowing arcade cabinet. Clear the neon maze of pellets
+while Blinky, Pinky, Inky and Clyde close in, each pathfinding with its own
+personality. Grab a flashing power-pellet and turn the tables — the ghosts go
+blue and you can eat them. Duck through the warp tunnels to shake them.
 
-Download the source code from the Github repository.
-Open a C++ compiler, such as Code::Blocks or Dev-C++, and create a new project.
-Add the main.cpp and header.h files to the project.
-Compile and run the project.
+## Play
 
-Alternatively, you can create an executable file using the following steps:
+No install, no build, no downloads — one self-contained folder, everything
+procedural. Serve it and open it:
 
-Open a C++ compiler, such as Code::Blocks or Dev-C++, and create a new project.
-Add the main.cpp and header.h files to the project.
-Compile the project.
-Create an executable file by going to File > Create New Executable.
-Run the executable file to play the game.
-Note: The game has been tested on Windows operating system only.
+```bash
+python -m http.server 8000        # then open http://localhost:8000
+```
 
-***
-# Functions
-The main functions of the game include:
+Or just double-click **`dist/pixel-pals.html`** (a single bundled file).
 
-* Moving the character around the grid using arrow keys
-* Collecting coins
-* Avoiding obstacles
-* Keeping track of the player's score
-* Generating a new game board after the player has completed the current one
+**Controls**
+- **Arrow keys** / **WASD** — move
+- **Space / Esc** — pause · **M** — mute
+- Idle on the title and the cabinet plays itself (attract mode).
 
-Here's a brief overview of the code:
+## What's in it
 
-* The map is defined using a 2D character array, where each character represents a different object in the game (e.g. walls, dots, player, enemy).
-* The ShowMap() function prints the current state of the map on the console.
-* The entity class represents a player or an enemy object in the game, and stores their current position on the map.
-* The gotoxy() function is used to set the cursor position on the console, which allows the code to draw the entities on the map.
-* The BFSArray vector is used to store the nodes visited during the BFS algorithm, and the walk_queue vector is used to store the shortest path found between the player and the enemy.
-* The FindPath() function implements the BFS algorithm to find the shortest path between two points on the map.
-* The main game loop repeatedly gets user input to move the player around the map, updates the position of the enemy based on the shortest path found by the BFS algorithm, and checks for collisions between the player and the enemy or the dots.
+- **Four ghosts, four minds.** Each runs a genuine breadth-first search every
+  time it reaches a junction. Blinky chases you head-on, Pinky ambushes ahead of
+  your heading, Inky flanks, Clyde loses his nerve up close. They alternate
+  chase/scatter waves so you get room to breathe.
+- **Power-pellets + eat-the-ghost.** Four flashing pellets flip every ghost to
+  frightened blue; eat them for 200 → 400 → 800 → 1600, and they scurry back to
+  the pen as eyes.
+- **An interconnected maze.** Fully braided (no dead-end traps), with a perimeter
+  escape-loop and warp tunnels that wrap the board left ↔ right — always a way out.
+- **The whole cabinet.** Neon marquee, CRT bezel with scanlines and curvature,
+  a 1UP / HIGH SCORE HUD, lives, a control deck with joystick and coin slot.
+- **A wound-up toy-arcade soundtrack**, fully synthesized in the browser.
 
-Overall, this code is a good example of how to implement a simple game using console input/output and basic algorithms like BFS. However, for future improvement could improvement using better programming practices (e.g. using object-oriented design, separating game logic from input/output, modularizing the code into smaller functions).
+## The algorithm
+
+The heart is `js/pathfinding.js` — a tunnel-aware breadth-first search returning
+the shortest path and a full distance field. `js/game.js` runs it four times a
+frame-ish (once per ghost decision) to drive the hunt. Same idea as `FindPath()`
+in `legacy/PixelPals.cpp`, the C++ ancestor.
+
+## Project layout
+
+```
+index.html          arcade cabinet shell + screens
+css/style.css        cabinet, CRT, neon HUD
+js/                  the game (see CLAUDE.md for the file map)
+legacy/              the original C++ console game it grew from
+dist/pixel-pals.html a single self-contained build (double-click to play)
+DESIGN.md            the retro-arcade art brief (Stitch design system)
+PLAN.md              build history
+CLAUDE.md            architecture & conventions
+```
+
+## Credits
+
+Reimagined from a college C++ project; visual direction developed with Google
+Stitch. All graphics and audio are procedural — no external assets. ♥
