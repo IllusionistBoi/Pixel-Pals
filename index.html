@@ -54,18 +54,21 @@
         <div class="overlays">
           <!-- TITLE / attract -->
           <section class="ov ov--title" id="screen-title" role="dialog" aria-label="Pixel Pals title screen">
-            <div class="title-menu">
+            <div class="attract-program">
+              <div class="attract-roster">
+                <p class="attract-roster__head" aria-hidden="true"><span>CHARACTER</span><span>HUNT PATTERN</span></p>
+                <ul class="ghostrow" aria-label="Meet the maze hunters and their hunt patterns">
+                  <li><span class="grow g-red" aria-hidden="true"></span><span class="gname">BLINKY</span><span class="gtrait">LOCKS ON</span></li>
+                  <li><span class="grow g-pink" aria-hidden="true"></span><span class="gname">PINKY</span><span class="gtrait">CUTS AHEAD</span></li>
+                  <li><span class="grow g-cyan" aria-hidden="true"></span><span class="gname">INKY</span><span class="gtrait">DOUBLE-TEAMS</span></li>
+                  <li><span class="grow g-orange" aria-hidden="true"></span><span class="gname">CLYDE</span><span class="gtrait">CHASES, THEN BAILS</span></li>
+                </ul>
+              </div>
               <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
-              <ul class="ghostrow" aria-label="Meet the ghost crew">
-                <li><span class="grow g-red" aria-hidden="true"></span><span class="gname">BLINKY</span><span class="gtrait">LOCKS ON</span></li>
-                <li><span class="grow g-pink" aria-hidden="true"></span><span class="gname">PINKY</span><span class="gtrait">CUTS AHEAD</span></li>
-                <li><span class="grow g-cyan" aria-hidden="true"></span><span class="gname">INKY</span><span class="gtrait">DOUBLE-TEAMS</span></li>
-                <li><span class="grow g-orange" aria-hidden="true"></span><span class="gname">CLYDE</span><span class="gtrait">CHASES, THEN BAILS</span></li>
-              </ul>
-              <button class="press" id="btn-start">PRESS&nbsp;START</button>
-              <div class="ov__links">
-                <button class="mini" id="btn-how">HOW TO PLAY</button>
-                <button class="mini" id="btn-mute-title">♪ SOUND</button>
+              <button class="press" id="btn-start" type="button">PRESS&nbsp;START</button>
+              <div class="ov__links" aria-label="Title screen options">
+                <button class="mini" id="btn-how" type="button">HOW TO PLAY</button>
+                <button class="mini" id="btn-mute-title" type="button">♪ SOUND</button>
               </div>
               <p class="coin" id="coin">INSERT COIN</p>
             </div>

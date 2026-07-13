@@ -187,47 +187,99 @@ body::before { /* room ambience */
   animation: ovin 0.18s var(--ease);
 }
 @keyframes ovin { from { opacity: 0; transform: scale(0.99); } }
-/* Title: stay transparent enough to reveal the attract chase + BFS algorithm
-   view behind it (the differentiator), while text stays legible via its shadow. */
+/* Title / attract: the live BFS chase remains visible as one uniformly dimmed
+   CRT layer. The type is the screen program — there is deliberately no panel. */
 .ov--title {
-  align-items: flex-start; padding: 14px clamp(18px, 5vw, 42px);
-  background: linear-gradient(90deg, rgba(3,3,9,0.58), rgba(3,3,9,0.18) 64%, rgba(3,3,9,0.08));
+  padding: clamp(14px, 3vh, 26px) clamp(18px, 5vw, 42px);
+  background: rgba(2, 3, 10, 0.82);
 }
-.title-menu {
-  width: min(330px, 74%); display: flex; flex-direction: column; align-items: stretch; gap: 8px;
-  padding: 14px 18px; text-align: left;
-  /* Near-opaque frosted card so the neon maze can't bleed through the small text. */
-  background: rgba(5,6,14,0.93);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,206,0,0.28); border-left: 3px solid var(--neon);
-  border-radius: 4px 8px 8px 4px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 30px rgba(0,0,0,0.5), 0 0 24px rgba(255,206,0,0.1);
+.attract-program {
+  width: min(100%, 480px); min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: clamp(7px, 1.6vh, 13px);
+  text-align: center;
 }
-.ov--title .press { align-self: flex-start; padding: 10px 22px; }
-.ov--title .ov__links { justify-content: flex-start; }
-.ov--title .coin { margin-top: 0; }
-.ov__tag { margin: 0; font-size: 10px; line-height: 1.45; letter-spacing: 0.12em; color: var(--cyan); max-width: 100%; text-wrap: balance; }
+.attract-roster { width: min(100%, 450px); }
+.attract-roster__head,
+.ghostrow li {
+  display: grid; grid-template-columns: 22px minmax(82px, 0.85fr) minmax(0, 1.65fr);
+  align-items: center; column-gap: 10px;
+}
+.attract-roster__head {
+  margin: 0 0 8px; color: var(--blue-hi);
+  font-family: var(--display); font-size: 8px; line-height: 1.5; letter-spacing: 0.08em;
+  text-align: left; text-shadow: 1px 1px 0 rgba(0,0,0,0.95);
+}
+.attract-roster__head span:first-child { grid-column: 2; }
+.attract-roster__head span:last-child { grid-column: 3; }
+.ghostrow {
+  width: 100%; margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 7px;
+}
+.ghostrow li { min-height: 24px; }
+.grow {
+  width: 20px; height: 19px; justify-self: center;
+  border-radius: 10px 10px 2px 2px;
+  background:
+    radial-gradient(circle at 38% 42%, #28356d 0 1px, var(--white) 1.4px 3.2px, transparent 3.5px),
+    radial-gradient(circle at 69% 42%, #28356d 0 1px, var(--white) 1.4px 3.2px, transparent 3.5px),
+    currentColor;
+  clip-path: polygon(0 0, 100% 0, 100% 78%, 86% 100%, 64% 80%, 50% 100%, 36% 80%, 14% 100%, 0 78%);
+  filter: drop-shadow(0 0 2px currentColor);
+}
+.gname {
+  min-width: 0; font-family: var(--display); font-size: clamp(8px, 1.25vw, 10px);
+  line-height: 1.4; letter-spacing: 0.05em; text-align: left; color: var(--white);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95);
+}
+.ghostrow li:nth-child(1) .gname { color: #ff6d7f; }
+.ghostrow li:nth-child(2) .gname { color: var(--pink); }
+.ghostrow li:nth-child(3) .gname { color: var(--cyan); }
+.ghostrow li:nth-child(4) .gname { color: var(--orange); }
+.gtrait {
+  min-width: 0; color: #d7d9ed; font-size: clamp(13px, 1.75vw, 17px); line-height: 1;
+  letter-spacing: 0.07em; text-align: left; white-space: nowrap;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95);
+}
+.gtrait::before {
+  content: ""; display: inline-block; width: 8px; margin: 0 7px 0 1px;
+  border-top: 1px solid #666b92; vertical-align: 0.24em;
+}
+.ov__tag {
+  max-width: 100%; margin: 0; color: var(--cyan);
+  font-size: clamp(11px, 1.6vw, 14px); line-height: 1.35; letter-spacing: 0.1em;
+  text-wrap: balance; text-shadow: 1px 1px 0 rgba(0,0,0,0.95);
+}
 .ov__h { margin: 0; font-family: var(--display); font-size: clamp(20px, 4vw, 34px); font-weight: 400; font-synthesis: none; letter-spacing: 0.08em; color: var(--blue-hi); line-height: 1.1;
   text-shadow: 0 0 10px rgba(110,160,255,0.8); }
 .ov__h--over { color: var(--red); text-shadow: 0 0 12px rgba(255,46,77,0.9); }
 .ov__links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-
-.ghostrow { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: 0.1em; }
-.ghostrow li { display: grid; grid-template-columns: 16px 58px 1fr; gap: 8px; align-items: center; min-height: 16px; }
-.grow { width: 15px; height: 15px; border-radius: 8px 8px 3px 3px; box-shadow: 0 0 7px currentColor; }
-.gname { text-align: left; color: var(--white); font-weight: 700; }
-.gtrait { color: #a6a8cc; }
-.gtrait { text-align: left; font-size: 10px; color: #b2b3c5; white-space: nowrap; }
-
+.ov--title #btn-start {
+  margin: 1px 0; padding: 9px 14px 8px;
+  font-family: var(--display); font-size: clamp(13px, 2vw, 19px); font-weight: 400;
+  line-height: 1.25; letter-spacing: 0.08em; color: var(--neon);
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  text-shadow: 2px 2px 0 #7e2e17, 0 0 5px rgba(255,206,0,0.38);
+  animation: title-prompt 1.15s steps(2, end) infinite;
+}
+@keyframes title-prompt { 50% { opacity: 0.44; } }
+.ov--title .ov__links { justify-content: center; gap: 16px; }
+.ov--title .mini {
+  padding: 5px 4px; color: #9adfed; background: transparent; border: 0; border-radius: 0;
+  font-size: 13px; line-height: 1; letter-spacing: 0.12em;
+}
+.ov--title .mini:hover { color: var(--white); background: transparent; }
+.ov--title .mini[aria-pressed="true"] { color: var(--orange); }
+.ov--title .coin {
+  margin: 0; color: var(--neon); font-family: var(--display);
+  font-size: clamp(8px, 1.1vw, 10px); line-height: 1.5; letter-spacing: 0.16em;
+  text-shadow: 1px 1px 0 #7e2e17;
+}
 /* Buttons */
 .press {
   font-family: var(--mono); font-weight: 700; font-size: clamp(15px, 2.6vw, 20px); letter-spacing: 0.14em;
   color: var(--bg); background: var(--neon); border: none; border-radius: 4px; padding: 12px 26px; cursor: pointer;
   box-shadow: 0 0 18px rgba(255,206,0,0.5), 0 4px 0 #a8360f; transition: transform 0.1s var(--ease), box-shadow 0.1s;
 }
-/* Only the title's START call-to-action pulses for attention — not Resume/Play Again/etc. */
-#btn-start { animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 30px rgba(255,206,0,0.9), 0 4px 0 #a8360f; } }
 .press:hover { transform: translateY(-2px); }
 .press:active { transform: translateY(3px); box-shadow: 0 0 12px rgba(255,206,0,0.5), 0 1px 0 #a8360f; }
 .press:focus-visible, .pick:focus-visible, .mini:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
@@ -400,8 +452,11 @@ body::before { /* room ambience */
   .logo { font-size: clamp(18px, 5.5vw, 28px); letter-spacing: 0.03em; }
   .marquee__ghost { width: 20px; height: 20px; }
   .hud__label { letter-spacing: 0.06em; }
-  .ov--title { padding: 10px 14px; }
-  .title-menu { width: min(100%, 310px); }
+  .ov--title { padding: 10px 16px; }
+  .attract-program { width: min(100%, 450px); gap: 7px; }
+  .attract-roster__head { margin-bottom: 5px; }
+  .ghostrow { gap: 5px; }
+  .ghostrow li { min-height: 22px; }
   .ov--help { gap: 8px; padding: 10px 14px; }
   .ov--help .how { padding-left: 16px; font-size: 12px; line-height: 1.45; }
   .ov--help .press { padding: 9px 18px; }
@@ -426,7 +481,16 @@ body::before { /* room ambience */
   .deck__label small { font-size: 8px; }
   .fineprint { margin-top: 0; font-size: 9px; line-height: 1; }
   .ov--diff, .ov--pause, .ov--help { gap: 8px; padding: 10px 16px; }
-  .ov--title { padding-inline: 18px; }
+  .ov--title { padding: 6px 16px; }
+  .attract-program { gap: 5px; }
+  .attract-roster__head { margin-bottom: 3px; font-size: 7px; }
+  .ghostrow { gap: 3px; }
+  .ghostrow li { min-height: 18px; }
+  .grow { width: 16px; height: 15px; }
+  .ov--title .ov__tag { font-size: 11px; line-height: 1.2; }
+  .ov--title #btn-start { padding: 6px 10px; font-size: 14px; }
+  .ov--title .mini { padding: 2px 4px; font-size: 11px; }
+  .ov--title .coin { font-size: 8px; line-height: 1.2; }
   .ov--over { gap: 2px; padding: 3px 12px; }
   .ov--over .ov__h { font-size: 18px; }
   .ov--over .over-score span { font-size: 8px; }
@@ -452,16 +516,22 @@ body::before { /* room ambience */
 @media (max-width: 380px) {
   .cabinet { padding-inline: 12px; }
   .crt { padding-inline: 4px; }
-  .ov--title { padding: 4px 8px; }
-  .title-menu { gap: 4px; padding: 8px 10px; }
-  .ov--title .ov__tag { font-size: 8px; line-height: 1.3; }
-  .ghostrow { gap: 2px; font-size: 9px; }
-  .ghostrow li { grid-template-columns: 13px 46px 1fr; gap: 5px; min-height: 14px; }
-  .grow { width: 13px; height: 13px; }
-  .gtrait { font-size: 8px; letter-spacing: 0.06em; }
-  .ov--title .press { font-size: 13px; padding: 6px 14px; }
-  .ov--title .mini { font-size: 9px; padding: 3px 6px; }
-  .ov--title .coin { font-size: 9px; line-height: 1.1; letter-spacing: 0.2em; }
+  .ov--title { padding: 4px 10px; }
+  .attract-program { gap: 4px; }
+  .attract-roster__head,
+  .ghostrow li { grid-template-columns: 16px minmax(54px, 0.85fr) minmax(0, 1.65fr); column-gap: 6px; }
+  .attract-roster__head { margin-bottom: 2px; font-size: 6px; }
+  .ghostrow { gap: 2px; }
+  .ghostrow li { min-height: 16px; }
+  .grow { width: 14px; height: 13px; }
+  .gname { font-size: 8px; }
+  .gtrait { font-size: 9px; letter-spacing: 0.03em; }
+  .gtrait::before { width: 5px; margin-right: 4px; }
+  .ov--title .ov__tag { font-size: 9px; line-height: 1.2; }
+  .ov--title #btn-start { font-size: 12px; padding: 5px 8px; }
+  .ov--title .ov__links { gap: 10px; }
+  .ov--title .mini { font-size: 9px; padding: 2px; }
+  .ov--title .coin { font-size: 7px; line-height: 1.2; letter-spacing: 0.14em; }
   .ov--diff, .ov--pause, .ov--help { gap: 4px; padding: 4px 8px; }
   .ov--diff .ov__h, .ov--pause .ov__h, .ov--help .ov__h { font-size: 15px; }
   .picks { width: 100%; gap: 3px; }
@@ -485,8 +555,8 @@ body::before { /* room ambience */
   .ov--over .press { font-size: 12px; padding: 4px 14px; }
   .ov--over .mini { font-size: 8px; padding: 1px 5px; }
 }
-@media (prefers-reduced-motion: reduce) { .press, .hud__label--1up, .coin, .ov { animation: none; } }
-.reduce-motion .press, .reduce-motion .coin { animation: none; }
+@media (prefers-reduced-motion: reduce) { .press, .hud__label--1up, .coin, .ov, #screen-title #btn-start { animation: none; } }
+.reduce-motion .press, .reduce-motion .coin, .reduce-motion #screen-title #btn-start { animation: none; }
 [hidden] { display: none !important; }
 
 </style>
@@ -537,18 +607,21 @@ body::before { /* room ambience */
         <div class="overlays">
           <!-- TITLE / attract -->
           <section class="ov ov--title" id="screen-title" role="dialog" aria-label="Pixel Pals title screen">
-            <div class="title-menu">
+            <div class="attract-program">
+              <div class="attract-roster">
+                <p class="attract-roster__head" aria-hidden="true"><span>CHARACTER</span><span>HUNT PATTERN</span></p>
+                <ul class="ghostrow" aria-label="Meet the maze hunters and their hunt patterns">
+                  <li><span class="grow g-red" aria-hidden="true"></span><span class="gname">BLINKY</span><span class="gtrait">LOCKS ON</span></li>
+                  <li><span class="grow g-pink" aria-hidden="true"></span><span class="gname">PINKY</span><span class="gtrait">CUTS AHEAD</span></li>
+                  <li><span class="grow g-cyan" aria-hidden="true"></span><span class="gname">INKY</span><span class="gtrait">DOUBLE-TEAMS</span></li>
+                  <li><span class="grow g-orange" aria-hidden="true"></span><span class="gname">CLYDE</span><span class="gtrait">CHASES, THEN BAILS</span></li>
+                </ul>
+              </div>
               <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
-              <ul class="ghostrow" aria-label="Meet the ghost crew">
-                <li><span class="grow g-red" aria-hidden="true"></span><span class="gname">BLINKY</span><span class="gtrait">LOCKS ON</span></li>
-                <li><span class="grow g-pink" aria-hidden="true"></span><span class="gname">PINKY</span><span class="gtrait">CUTS AHEAD</span></li>
-                <li><span class="grow g-cyan" aria-hidden="true"></span><span class="gname">INKY</span><span class="gtrait">DOUBLE-TEAMS</span></li>
-                <li><span class="grow g-orange" aria-hidden="true"></span><span class="gname">CLYDE</span><span class="gtrait">CHASES, THEN BAILS</span></li>
-              </ul>
-              <button class="press" id="btn-start">PRESS&nbsp;START</button>
-              <div class="ov__links">
-                <button class="mini" id="btn-how">HOW TO PLAY</button>
-                <button class="mini" id="btn-mute-title">♪ SOUND</button>
+              <button class="press" id="btn-start" type="button">PRESS&nbsp;START</button>
+              <div class="ov__links" aria-label="Title screen options">
+                <button class="mini" id="btn-how" type="button">HOW TO PLAY</button>
+                <button class="mini" id="btn-mute-title" type="button">♪ SOUND</button>
               </div>
               <p class="coin" id="coin">INSERT COIN</p>
             </div>
