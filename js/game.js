@@ -101,7 +101,7 @@
     }
     this.blinky = this.ghosts[0];
 
-    this.modeTimer = 0; this.globalMode = 'chase'; this.frightChain = 0;
+    this.modeTimer = 0; this.globalMode = 'chase'; this.frightChain = 0; this.frightUntil = 0;
   };
 
   G.corners = function () {
@@ -131,7 +131,7 @@
 
   G.startAttract = function () {
     this.diff = 'normal'; this.level = 1; this.score = 0; this.lives = 3;
-    this.state = 'attract';
+    this.state = 'attract'; this.A.music.stop();
     this.newLevel({ seed: 4242 });
   };
 
@@ -155,8 +155,8 @@
     this.modeTimer = 0; this.globalMode = 'chase';
   };
 
-  G.pause = function () { if (this.state === 'playing') { this.state = 'paused'; this.emit(); } };
-  G.resume = function () { if (this.state === 'paused') { this.state = 'playing'; this.emit(); } };
+  G.pause = function () { if (this.state === 'playing') { this.state = 'paused'; this.A.music.stop(); this.emit(); } };
+  G.resume = function () { if (this.state === 'paused') { this.state = 'playing'; this.A.music.start(); this.emit(); } };
 
   // ---- Movement -----------------------------------------------------------
   G.stepTile = function (x, y, dx, dy) { return this.PF.step(this.grid, this.tunnelSet, x, y, dx, dy); };
@@ -294,8 +294,15 @@
   G.reverseEntity = function (ent) {
     if (ent.moving) {
       var dest = this.stepTile(ent.tx, ent.ty, ent.dir.x, ent.dir.y);
-      if (dest) { ent.tx = dest.x; ent.ty = dest.y; }
-      ent.progress = 1 - ent.progress;
+      if (dest) {
+        // If this leg wrapped through a tunnel, snap to the far mouth and restart
+        // the tile cleanly rather than reanchoring across the whole board.
+        if (Math.abs(dest.x - ent.tx) > 1 || Math.abs(dest.y - ent.ty) > 1) {
+          ent.tx = dest.x; ent.ty = dest.y; ent.progress = 0;
+        } else {
+          ent.tx = dest.x; ent.ty = dest.y; ent.progress = 1 - ent.progress;
+        }
+      }
     }
     ent.dir = { x: -ent.dir.x, y: -ent.dir.y };
   };
@@ -319,7 +326,8 @@
 
   // ---- Main update --------------------------------------------------------
   G.update = function (dt) {
-    dt = Math.min(dt, 0.05); this.time += dt;
+    dt = Math.min(dt, 0.05);
+    if (this.state !== 'paused') this.time += dt; // freeze the sim clock while paused
     this.particles.update(dt); this.updateShake(dt);
     if (this.power) this.power.forEach(function (v) { v.t += dt; });
     if (this.pom) this.pom.chomp = this.U.damp(this.pom.chomp || 0, 0, 12, dt);
@@ -365,21 +373,21 @@
           // navigate it up and out through the gate (no teleport).
           g.mode = 'chase'; g.dir = { x: 0, y: -1 }; g.moving = false; g.progress = 0;
           g.px = (g.tx + 0.5) * this.R.cell; g.py = (g.ty + 0.5) * this.R.cell; // drop the bob offset
-          if (this.frightUntil && this.frightUntil > this.time) g.frightT = this.frightUntil - this.time; // inherit active power window
         }
         continue;
       }
-      // frightened timer
-      if (g.frightT > 0 && g.mode === 'chase') { g.frightT -= dt; }
+      // Frightened is DERIVED from the single global deadline, so every chase
+      // ghost (incl. just-released or just-revived) is consistently edible.
+      if (g.mode === 'chase') g.frightT = (this.frightUntil > this.time) ? (this.frightUntil - this.time) : 0;
       // speed: eyes fast, frightened slow
-      var baseSpeed = g.speed;
-      var spd = g.mode === 'eaten' ? baseSpeed * 1.9 : (g.frightT > 0 ? baseSpeed * 0.5 : baseSpeed);
+      var spd = g.mode === 'eaten' ? g.speed * 1.9 : (g.frightT > 0 ? g.speed * 0.5 : g.speed);
       var save = g.speed; g.speed = spd;
       this.moveEntity(g, dt, (function (gg) { return function () { return self.ghostDir(gg); }; })(g), null);
       g.speed = save;
-      // eyes reached pen -> revive
+      // eyes reached pen -> revive at the tile centre (no fractional-progress jump)
       if (g.mode === 'eaten' && Math.abs(g.tx - this.pen.cx) <= 1 && Math.abs(g.ty - this.pen.cy) <= 1) {
-        g.mode = 'chase'; g.frightT = 0; g.eyes = false; g.dir = { x: 0, y: -1 };
+        g.mode = 'chase'; g.eyes = false; g.dir = { x: 0, y: -1 }; g.moving = false; g.progress = 0;
+        g.px = (g.tx + 0.5) * this.R.cell; g.py = (g.ty + 0.5) * this.R.cell;
       }
       this.checkGhostCollision(g);
     }
@@ -450,10 +458,22 @@
     var idx = Math.floor(this.time / 2.8) % 4;
     var g = this.ghosts[idx];
     if (!g || g.mode !== 'chase') { this.algo = null; return; }
-    var tgt = this.ghostTarget(g);
-    tgt = { x: this.U.clamp(tgt.x, 0, this.cols - 1), y: this.U.clamp(tgt.y, 0, this.rows - 1) };
+    var tgt = this.snapOpen(this.ghostTarget(g)); // Inky/Clyde targets can be walls
     var res = this.PF.bfs(this.grid, { x: g.tx, y: g.ty }, tgt, this.pf);
+    if (!res.found) { this.algo = null; return; }  // don't label a non-path as "LIVE BFS"
     this.algo = { type: g.type, path: res.path, target: tgt, label: GHOST_LABELS[g.type], gx: g.px, gy: g.py };
+  };
+
+  G.snapOpen = function (t) {
+    var x = this.U.clamp(t.x, 0, this.cols - 1), y = this.U.clamp(t.y, 0, this.rows - 1);
+    if (this.grid[y][x] === 0) return { x: x, y: y };
+    for (var r = 1; r < Math.max(this.cols, this.rows); r++)
+      for (var dy = -r; dy <= r; dy++)
+        for (var dx = -r; dx <= r; dx++) {
+          var nx = x + dx, ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < this.cols && ny < this.rows && this.grid[ny][nx] === 0) return { x: nx, y: ny };
+        }
+    return { x: x, y: y };
   };
 
   // ---- Attract autopilot --------------------------------------------------
@@ -470,8 +490,17 @@
     // else head to nearest dot.
     var r = this.PF.bfs(this.grid, here, { x: -1, y: -1 }, this.pf); var bestD = 1e9, bt = null;
     this.dots.forEach(function (v, k) { var pp = k.split(','), dx = +pp[0], dy = +pp[1]; var d = r.dist[dy * self.cols + dx]; if (d >= 0 && d < bestD) { bestD = d; bt = { x: dx, y: dy }; } });
-    if (bt) { var pr = this.PF.bfs(this.grid, here, bt, this.pf); if (pr.path.length) return { x: pr.path[0].x - here.x, y: pr.path[0].y - here.y }; }
+    if (bt) { var pr = this.PF.bfs(this.grid, here, bt, this.pf); if (pr.path.length) return this.unitTo(here, pr.path[0]); }
     return p.dir;
+  };
+
+  // Unit direction from `from` to an adjacent tile, correcting for tunnel wrap
+  // (a wrapped step of cols-2 must read as a single step, not 28 cells).
+  G.unitTo = function (from, to) {
+    var dx = to.x - from.x, dy = to.y - from.y;
+    if (dx > 1) dx = -1; else if (dx < -1) dx = 1;
+    if (dy > 1) dy = -1; else if (dy < -1) dy = 1;
+    return { x: dx > 0 ? 1 : dx < 0 ? -1 : 0, y: dy > 0 ? 1 : dy < 0 ? -1 : 0 };
   };
 
   // ---- Shake + render bridge ---------------------------------------------
@@ -480,7 +509,7 @@
 
   G.relayout = function () {
     if (!this.grid) return;
-    this.R.layout(this.grid, this.cols, this.rows, { tunnelRows: this.tunnelRows });
+    this.R.layout(this.grid, this.cols, this.rows, { tunnelRows: this.tunnelRows, pen: this.pen });
     var cell = this.R.cell;
     var fix = function (e) { e.px = (e.tx + 0.5) * cell; e.py = (e.ty + 0.5) * cell; };
     if (this.pom) fix(this.pom); if (this.ghosts) this.ghosts.forEach(fix);

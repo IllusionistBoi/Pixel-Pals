@@ -102,8 +102,8 @@ body::before { /* room ambience */
 .logo {
   margin: 0; font-family: var(--display); font-size: clamp(24px, 3.5vw, 42px); font-weight: 400; font-synthesis: none;
   letter-spacing: 0.06em; color: var(--neon); line-height: 1;
-  text-shadow: 0 0 6px rgba(255,206,0,0.9), 0 0 18px rgba(255,206,0,0.7), 0 0 40px rgba(255,140,0,0.5), 3px 3px 0 #a8360f;
-  -webkit-text-stroke: 1px #ff8a3d;
+  text-shadow: 3px 3px 0 #7e2e17, 0 0 10px rgba(255,206,0,0.38);
+  -webkit-text-stroke: 0.5px #ff9b3d;
 }
 .marquee__ghost { width: 26px; height: 26px; border-radius: 13px 13px 4px 4px; box-shadow: 0 0 12px currentColor; position: relative; }
 .g-red { background: var(--red); color: var(--red); }
@@ -187,6 +187,9 @@ body::before { /* room ambience */
   animation: ovin 0.18s var(--ease);
 }
 @keyframes ovin { from { opacity: 0; transform: scale(0.99); } }
+/* Title: stay transparent enough to reveal the attract chase + BFS algorithm
+   view behind it (the differentiator), while text stays legible via its shadow. */
+.ov--title { background: radial-gradient(120% 120% at 50% 45%, rgba(4,5,12,0.70), rgba(3,3,9,0.86) 80%); }
 .ov__logo { margin: 0; font-family: var(--display); font-size: clamp(24px, 5vw, 46px); font-weight: 400; font-synthesis: none; color: var(--neon); letter-spacing: 0.05em; line-height: 1.05;
   text-shadow: 0 0 8px rgba(255,206,0,0.9), 0 0 26px rgba(255,140,0,0.6), 4px 4px 0 #a8360f; text-wrap: balance; }
 .ov__tag { margin: 0; font-size: 10px; letter-spacing: 0.12em; color: var(--cyan); max-width: 90%; text-wrap: balance; }
@@ -422,7 +425,7 @@ body::before { /* room ambience */
         <!-- Full-screen overlays: cover the whole CRT (incl. HUD) so nothing overlaps -->
         <div class="overlays">
           <!-- TITLE / attract -->
-          <section class="ov ov--title" id="screen-title" role="dialog" aria-modal="true" aria-label="Pixel Pals title screen">
+          <section class="ov ov--title" id="screen-title" role="dialog" aria-label="Pixel Pals title screen">
             <h2 class="ov__logo">PIXEL PALS</h2>
             <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
             <div class="ghostrow">
@@ -440,7 +443,7 @@ body::before { /* room ambience */
           </section>
 
           <!-- DIFFICULTY -->
-          <section class="ov ov--diff" id="screen-diff" hidden role="dialog" aria-modal="true" aria-label="Select difficulty">
+          <section class="ov ov--diff" id="screen-diff" hidden role="dialog" aria-label="Select difficulty">
             <h2 class="ov__h">SELECT SPEED</h2>
             <ul class="picks">
               <li><button class="pick" data-diff="easy"><b>EASY</b><span>ghosts amble · take your time</span></button></li>
@@ -451,7 +454,7 @@ body::before { /* room ambience */
           </section>
 
           <!-- PAUSE -->
-          <section class="ov ov--pause" id="screen-pause" hidden role="dialog" aria-modal="true" aria-label="Paused">
+          <section class="ov ov--pause" id="screen-pause" hidden role="dialog" aria-label="Paused">
             <h2 class="ov__h">PAUSED</h2>
             <button class="press" id="btn-resume">RESUME</button>
             <div class="ov__links">
@@ -462,7 +465,7 @@ body::before { /* room ambience */
           </section>
 
           <!-- GAME OVER -->
-          <section class="ov ov--over" id="screen-over" hidden role="dialog" aria-modal="true" aria-label="Game over">
+          <section class="ov ov--over" id="screen-over" hidden role="dialog" aria-label="Game over">
             <h2 class="ov__h ov__h--over">GAME&nbsp;OVER</h2>
             <div class="over-score"><span>SCORE</span><b id="over-score">0</b></div>
             <p class="over-rank" id="over-rank"></p>
@@ -478,7 +481,7 @@ body::before { /* room ambience */
           </section>
 
           <!-- HOW TO -->
-          <section class="ov ov--help" id="screen-help" hidden role="dialog" aria-modal="true" aria-label="How to play">
+          <section class="ov ov--help" id="screen-help" hidden role="dialog" aria-label="How to play">
             <h2 class="ov__h">HOW TO PLAY</h2>
             <ul class="how">
               <li>◂ ▸ ▴ ▾ / WASD — move Pom around the neon maze.</li>
@@ -873,9 +876,13 @@ body::before { /* room ambience */
     // keep corridors flanking the house connected
     grid[pcy][pcx - 3 > 0 ? pcx - 3 : 1] = 1;
 
-    // 7) Connectivity repair — flood from a known corridor, reconnect any pocket.
-    var startCell = nearestOpen(grid, 1, rows - 2, cols, rows, house);
-    repair(grid, cols, rows, startCell, house);
+    // 7) Force perfect left-right symmetry (the braid/repair mutated both halves
+    //    independently). The house/tunnels/ring are already centred, so a final
+    //    mirror + centre-stitch is symmetric; the perimeter ring keeps everything
+    //    connected, so repair is a no-op and symmetry survives.
+    for (var my = 0; my < rows; my++) for (var mx = 0; mx < half; mx++) grid[my][cols - 1 - mx] = grid[my][mx];
+    for (var sy2 = 1; sy2 < rows - 1; sy2 += 2) if (grid[sy2][half - 1] === 0 || grid[sy2][half + 1] === 0) grid[sy2][half] = 0;
+    repair(grid, cols, rows, nearestOpen(grid, 1, rows - 2, cols, rows, house), house);
 
     // Spawns.
     var pomStart = nearestOpen(grid, pcx, rows - 2, cols, rows, house);
@@ -986,7 +993,9 @@ body::before { /* room ambience */
     var touchDir = null;              // persistent direction from touch
     var pressQueue = [], handlers = {};
 
+    function isEditable(t) { if (!t) return false; var tn = t.tagName; return tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || t.isContentEditable; }
     function onKeyDown(e) {
+      if (isEditable(e.target)) return; // let text fields (initials) receive keys
       var dir = DIR_KEYS[e.code];
       if (dir) { held[dir] = true; lastDir = dir; lastAt = now(); touchDir = null; e.preventDefault(); return; }
       if (!e.repeat) { pressQueue.push(e.code); if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault(); }
@@ -1180,6 +1189,7 @@ body::before { /* room ambience */
       // The signature cue: a soft music-box ping on every real BFS recompute.
       // `closeness` 0..1 (1 = Eater right on top of Pom) → higher, more dread.
       ping: function (closeness) {
+        if (!unlocked) return;
         var f = 380 + Math.min(1, Math.max(0, closeness)) * 900;
         var t = now();
         var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
@@ -1193,6 +1203,7 @@ body::before { /* room ambience */
       },
       // Eater footstep — a low-passed wood-block, tempo-locked by the caller.
       step: function () {
+        if (!unlocked) return;
         var t = now();
         var src = ac.createBufferSource(); src.buffer = noiseBuf;
         var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 380; bp.Q.value = 6;
@@ -1264,7 +1275,7 @@ body::before { /* room ambience */
       music.playing = true;
       music._step = 0;
       musicGain.gain.cancelScheduledValues(now());
-      musicGain.gain.setTargetAtTime(muted ? 0 : 0.5, now(), 0.5);
+      musicGain.gain.setTargetAtTime(0.5, now(), 0.5); // master gain is the mute gate
       musicTick();
     };
     music.stop = function () {
@@ -1475,9 +1486,11 @@ body::before { /* room ambience */
     this.grid = grid; this.cols = cols; this.rows = rows;
     this.tunnelRows = (opts && opts.tunnelRows) || [];
     this.pen = opts && opts.pen;
-    // Reserve room for the marquee, HUD bars, control deck + fineprint so the
-    // whole cabinet fits the viewport without clipping.
-    var maxW = Math.min(root.innerWidth - 80, 1150);
+    // Size to the CAPPED cabinet body (~820px), not the raw viewport, so the
+    // backing canvas isn't oversized then CSS-downscaled. Refresh DPR so zoom /
+    // monitor changes re-bake crisply.
+    this.dpr = Math.min(root.devicePixelRatio || 1, 2);
+    var maxW = Math.min(root.innerWidth - 80, 764);
     var maxH = root.innerHeight - 330;
     var cell = Math.floor(Math.min(maxW / cols, maxH / rows));
     this.cell = U.clamp(cell, 12, 40);
@@ -1609,9 +1622,9 @@ body::before { /* room ambience */
     ctx.beginPath(); ctx.moveTo(tx - cell * 0.2, ty); ctx.lineTo(tx + cell * 0.2, ty); ctx.moveTo(tx, ty - cell * 0.2); ctx.lineTo(tx, ty + cell * 0.2); ctx.stroke();
     // label banner
     ctx.globalAlpha = 1; ctx.shadowBlur = cell * 0.35; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = 'bold ' + Math.round(cell * 0.52) + 'px "Space Mono", ui-monospace, monospace';
+    ctx.font = 'bold ' + Math.round(cell * 0.52) + 'px "VT323", "Space Mono", ui-monospace, monospace';
     ctx.fillStyle = col; ctx.fillText(a.label, this.w / 2, cell * 0.5);
-    ctx.font = Math.round(cell * 0.34) + 'px "Space Mono", ui-monospace, monospace';
+    ctx.font = Math.round(cell * 0.34) + 'px "VT323", "Space Mono", ui-monospace, monospace';
     ctx.fillStyle = T.css('white'); ctx.shadowBlur = 0; ctx.globalAlpha = 0.7;
     ctx.fillText('LIVE BREADTH-FIRST SEARCH', this.w / 2, cell * 1.15);
     ctx.restore();
@@ -1711,7 +1724,7 @@ body::before { /* room ambience */
   Renderer.prototype.drawFloatText = function (ctx, state) {
     if (!state.floatText) return;
     var cell = this.cell;
-    ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold ' + (cell * 0.6) + 'px "Space Mono", monospace';
+    ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold ' + (cell * 0.6) + 'px "VT323", "Space Mono", monospace';
     for (var i = 0; i < state.floatText.length; i++) {
       var f = state.floatText[i], a = 1 - f.t;
       ctx.fillStyle = T.css('frightPale', a);
@@ -1724,7 +1737,7 @@ body::before { /* room ambience */
     var cell = this.cell;
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = T.css('neon'); ctx.shadowColor = T.css('neon'); ctx.shadowBlur = cell;
-    ctx.font = 'bold ' + (cell * 1.0) + 'px "Space Mono", monospace';
+    ctx.font = 'bold ' + (cell * 1.0) + 'px "VT323", "Space Mono", monospace';
     ctx.fillText('READY!', this.w / 2, this.h * 0.62);
     ctx.restore();
   };
@@ -1837,7 +1850,7 @@ body::before { /* room ambience */
     }
     this.blinky = this.ghosts[0];
 
-    this.modeTimer = 0; this.globalMode = 'chase'; this.frightChain = 0;
+    this.modeTimer = 0; this.globalMode = 'chase'; this.frightChain = 0; this.frightUntil = 0;
   };
 
   G.corners = function () {
@@ -1867,7 +1880,7 @@ body::before { /* room ambience */
 
   G.startAttract = function () {
     this.diff = 'normal'; this.level = 1; this.score = 0; this.lives = 3;
-    this.state = 'attract';
+    this.state = 'attract'; this.A.music.stop();
     this.newLevel({ seed: 4242 });
   };
 
@@ -1891,8 +1904,8 @@ body::before { /* room ambience */
     this.modeTimer = 0; this.globalMode = 'chase';
   };
 
-  G.pause = function () { if (this.state === 'playing') { this.state = 'paused'; this.emit(); } };
-  G.resume = function () { if (this.state === 'paused') { this.state = 'playing'; this.emit(); } };
+  G.pause = function () { if (this.state === 'playing') { this.state = 'paused'; this.A.music.stop(); this.emit(); } };
+  G.resume = function () { if (this.state === 'paused') { this.state = 'playing'; this.A.music.start(); this.emit(); } };
 
   // ---- Movement -----------------------------------------------------------
   G.stepTile = function (x, y, dx, dy) { return this.PF.step(this.grid, this.tunnelSet, x, y, dx, dy); };
@@ -2030,8 +2043,15 @@ body::before { /* room ambience */
   G.reverseEntity = function (ent) {
     if (ent.moving) {
       var dest = this.stepTile(ent.tx, ent.ty, ent.dir.x, ent.dir.y);
-      if (dest) { ent.tx = dest.x; ent.ty = dest.y; }
-      ent.progress = 1 - ent.progress;
+      if (dest) {
+        // If this leg wrapped through a tunnel, snap to the far mouth and restart
+        // the tile cleanly rather than reanchoring across the whole board.
+        if (Math.abs(dest.x - ent.tx) > 1 || Math.abs(dest.y - ent.ty) > 1) {
+          ent.tx = dest.x; ent.ty = dest.y; ent.progress = 0;
+        } else {
+          ent.tx = dest.x; ent.ty = dest.y; ent.progress = 1 - ent.progress;
+        }
+      }
     }
     ent.dir = { x: -ent.dir.x, y: -ent.dir.y };
   };
@@ -2055,7 +2075,8 @@ body::before { /* room ambience */
 
   // ---- Main update --------------------------------------------------------
   G.update = function (dt) {
-    dt = Math.min(dt, 0.05); this.time += dt;
+    dt = Math.min(dt, 0.05);
+    if (this.state !== 'paused') this.time += dt; // freeze the sim clock while paused
     this.particles.update(dt); this.updateShake(dt);
     if (this.power) this.power.forEach(function (v) { v.t += dt; });
     if (this.pom) this.pom.chomp = this.U.damp(this.pom.chomp || 0, 0, 12, dt);
@@ -2101,21 +2122,21 @@ body::before { /* room ambience */
           // navigate it up and out through the gate (no teleport).
           g.mode = 'chase'; g.dir = { x: 0, y: -1 }; g.moving = false; g.progress = 0;
           g.px = (g.tx + 0.5) * this.R.cell; g.py = (g.ty + 0.5) * this.R.cell; // drop the bob offset
-          if (this.frightUntil && this.frightUntil > this.time) g.frightT = this.frightUntil - this.time; // inherit active power window
         }
         continue;
       }
-      // frightened timer
-      if (g.frightT > 0 && g.mode === 'chase') { g.frightT -= dt; }
+      // Frightened is DERIVED from the single global deadline, so every chase
+      // ghost (incl. just-released or just-revived) is consistently edible.
+      if (g.mode === 'chase') g.frightT = (this.frightUntil > this.time) ? (this.frightUntil - this.time) : 0;
       // speed: eyes fast, frightened slow
-      var baseSpeed = g.speed;
-      var spd = g.mode === 'eaten' ? baseSpeed * 1.9 : (g.frightT > 0 ? baseSpeed * 0.5 : baseSpeed);
+      var spd = g.mode === 'eaten' ? g.speed * 1.9 : (g.frightT > 0 ? g.speed * 0.5 : g.speed);
       var save = g.speed; g.speed = spd;
       this.moveEntity(g, dt, (function (gg) { return function () { return self.ghostDir(gg); }; })(g), null);
       g.speed = save;
-      // eyes reached pen -> revive
+      // eyes reached pen -> revive at the tile centre (no fractional-progress jump)
       if (g.mode === 'eaten' && Math.abs(g.tx - this.pen.cx) <= 1 && Math.abs(g.ty - this.pen.cy) <= 1) {
-        g.mode = 'chase'; g.frightT = 0; g.eyes = false; g.dir = { x: 0, y: -1 };
+        g.mode = 'chase'; g.eyes = false; g.dir = { x: 0, y: -1 }; g.moving = false; g.progress = 0;
+        g.px = (g.tx + 0.5) * this.R.cell; g.py = (g.ty + 0.5) * this.R.cell;
       }
       this.checkGhostCollision(g);
     }
@@ -2186,10 +2207,22 @@ body::before { /* room ambience */
     var idx = Math.floor(this.time / 2.8) % 4;
     var g = this.ghosts[idx];
     if (!g || g.mode !== 'chase') { this.algo = null; return; }
-    var tgt = this.ghostTarget(g);
-    tgt = { x: this.U.clamp(tgt.x, 0, this.cols - 1), y: this.U.clamp(tgt.y, 0, this.rows - 1) };
+    var tgt = this.snapOpen(this.ghostTarget(g)); // Inky/Clyde targets can be walls
     var res = this.PF.bfs(this.grid, { x: g.tx, y: g.ty }, tgt, this.pf);
+    if (!res.found) { this.algo = null; return; }  // don't label a non-path as "LIVE BFS"
     this.algo = { type: g.type, path: res.path, target: tgt, label: GHOST_LABELS[g.type], gx: g.px, gy: g.py };
+  };
+
+  G.snapOpen = function (t) {
+    var x = this.U.clamp(t.x, 0, this.cols - 1), y = this.U.clamp(t.y, 0, this.rows - 1);
+    if (this.grid[y][x] === 0) return { x: x, y: y };
+    for (var r = 1; r < Math.max(this.cols, this.rows); r++)
+      for (var dy = -r; dy <= r; dy++)
+        for (var dx = -r; dx <= r; dx++) {
+          var nx = x + dx, ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < this.cols && ny < this.rows && this.grid[ny][nx] === 0) return { x: nx, y: ny };
+        }
+    return { x: x, y: y };
   };
 
   // ---- Attract autopilot --------------------------------------------------
@@ -2206,8 +2239,17 @@ body::before { /* room ambience */
     // else head to nearest dot.
     var r = this.PF.bfs(this.grid, here, { x: -1, y: -1 }, this.pf); var bestD = 1e9, bt = null;
     this.dots.forEach(function (v, k) { var pp = k.split(','), dx = +pp[0], dy = +pp[1]; var d = r.dist[dy * self.cols + dx]; if (d >= 0 && d < bestD) { bestD = d; bt = { x: dx, y: dy }; } });
-    if (bt) { var pr = this.PF.bfs(this.grid, here, bt, this.pf); if (pr.path.length) return { x: pr.path[0].x - here.x, y: pr.path[0].y - here.y }; }
+    if (bt) { var pr = this.PF.bfs(this.grid, here, bt, this.pf); if (pr.path.length) return this.unitTo(here, pr.path[0]); }
     return p.dir;
+  };
+
+  // Unit direction from `from` to an adjacent tile, correcting for tunnel wrap
+  // (a wrapped step of cols-2 must read as a single step, not 28 cells).
+  G.unitTo = function (from, to) {
+    var dx = to.x - from.x, dy = to.y - from.y;
+    if (dx > 1) dx = -1; else if (dx < -1) dx = 1;
+    if (dy > 1) dy = -1; else if (dy < -1) dy = 1;
+    return { x: dx > 0 ? 1 : dx < 0 ? -1 : 0, y: dy > 0 ? 1 : dy < 0 ? -1 : 0 };
   };
 
   // ---- Shake + render bridge ---------------------------------------------
@@ -2216,7 +2258,7 @@ body::before { /* room ambience */
 
   G.relayout = function () {
     if (!this.grid) return;
-    this.R.layout(this.grid, this.cols, this.rows, { tunnelRows: this.tunnelRows });
+    this.R.layout(this.grid, this.cols, this.rows, { tunnelRows: this.tunnelRows, pen: this.pen });
     var cell = this.R.cell;
     var fix = function (e) { e.px = (e.tx + 0.5) * cell; e.py = (e.ty + 0.5) * cell; };
     if (this.pom) fix(this.pom); if (this.ghosts) this.ghosts.forEach(fix);
@@ -2403,7 +2445,7 @@ body::before { /* room ambience */
   var pendingTs = null;
   function renderBoard(scores, myTs) {
     els.board.innerHTML = '';
-    (scores || []).slice(0, 6).forEach(function (sc, i) {
+    (scores || []).slice(0, 8).forEach(function (sc, i) {
       var li = document.createElement('li');
       if (myTs != null && sc.ts === myTs) li.className = 'me';
       li.innerHTML = '<span>' + (i + 1) + '. ' + (sc.initials || 'AAA') + '</span>'
@@ -2444,9 +2486,11 @@ body::before { /* room ambience */
   // ---- keyboard -----------------------------------------------------------
   root.addEventListener('keydown', function (e) {
     var k = e.code;
-    // Let Space/Enter activate a focused control instead of hijacking it globally.
     var tag = (e.target && e.target.tagName) || '';
-    if ((k === 'Space' || k === 'Enter') && (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A')) return;
+    // Typing in a text field (initials) must not trigger any game shortcut.
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+    // Let Space/Enter activate a focused control instead of hijacking it globally.
+    if ((k === 'Space' || k === 'Enter') && (tag === 'BUTTON' || tag === 'A')) return;
     if (k === 'KeyM') { toggleMute(); return; }
     if (game.state === 'playing') {
       if (k === 'Escape' || k === 'Space') { e.preventDefault(); game.pause(); showMenu('pause'); }
@@ -2474,6 +2518,13 @@ body::before { /* room ambience */
   // ---- loop ---------------------------------------------------------------
   // ---- Gamepad (physical arcade sticks / controllers) --------------------
   var gpPrev = {}, lastState = null;
+  function focusPick(picks, delta) {
+    if (!picks.length) return;
+    var idx = -1;
+    for (var i = 0; i < picks.length; i++) if (picks[i] === document.activeElement) { idx = i; break; }
+    idx = idx < 0 ? (delta > 0 ? 0 : picks.length - 1) : (idx + delta + picks.length) % picks.length;
+    picks[idx].focus();
+  }
   function pollGamepad() {
     if (!root.navigator || !navigator.getGamepads) return;
     var pads = navigator.getGamepads(), gp = null;
@@ -2487,10 +2538,22 @@ body::before { /* room ambience */
     else if (ax && (Math.abs(ax[0] || 0) > 0.5 || Math.abs(ax[1] || 0) > 0.5)) {
       dir = Math.abs(ax[0]) > Math.abs(ax[1]) ? (ax[0] > 0 ? 'right' : 'left') : (ax[1] > 0 ? 'down' : 'up');
     }
-    if (dir) input.setTouchDir(dir);
+    var playing = game.state === 'playing' || game.state === 'attract';
+    if (dir && playing) input.setTouchDir(dir);
     function edge(idx) { var p = b[idx] && b[idx].pressed; var was = gpPrev[idx]; gpPrev[idx] = p; return p && !was; }
-    if (edge(0)) deckA();                 // A / cross
-    if (edge(1)) deckB();                 // B / circle
+    // On the difficulty screen, the stick/d-pad moves focus between the picks.
+    if (!playing && menu === 'diff') {
+      var picks = document.querySelectorAll('.pick');
+      var su = (ax[1] || 0) < -0.5, sd = (ax[1] || 0) > 0.5;
+      var upE = edge(12) || (su && !gpPrev.su), dnE = edge(13) || (sd && !gpPrev.sd);
+      gpPrev.su = su; gpPrev.sd = sd;
+      if (upE) focusPick(picks, -1); else if (dnE) focusPick(picks, 1);
+    }
+    if (edge(0)) {                        // A / cross = confirm
+      if (!playing && menu === 'diff' && document.activeElement && document.activeElement.classList.contains('pick')) document.activeElement.click();
+      else deckA();
+    }
+    if (edge(1)) deckB();                 // B / circle = pause/back
     if (edge(9)) { if (game.state === 'playing') { game.pause(); showMenu('pause'); } else if (menu === 'title') showMenu('diff'); else if (menu === 'diff') beginGame(game.diff || 'normal'); } // start
   }
 

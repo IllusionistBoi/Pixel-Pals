@@ -25,7 +25,9 @@
     var touchDir = null;              // persistent direction from touch
     var pressQueue = [], handlers = {};
 
+    function isEditable(t) { if (!t) return false; var tn = t.tagName; return tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || t.isContentEditable; }
     function onKeyDown(e) {
+      if (isEditable(e.target)) return; // let text fields (initials) receive keys
       var dir = DIR_KEYS[e.code];
       if (dir) { held[dir] = true; lastDir = dir; lastAt = now(); touchDir = null; e.preventDefault(); return; }
       if (!e.repeat) { pressQueue.push(e.code); if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault(); }

@@ -154,7 +154,7 @@
   var pendingTs = null;
   function renderBoard(scores, myTs) {
     els.board.innerHTML = '';
-    (scores || []).slice(0, 6).forEach(function (sc, i) {
+    (scores || []).slice(0, 8).forEach(function (sc, i) {
       var li = document.createElement('li');
       if (myTs != null && sc.ts === myTs) li.className = 'me';
       li.innerHTML = '<span>' + (i + 1) + '. ' + (sc.initials || 'AAA') + '</span>'
@@ -195,9 +195,11 @@
   // ---- keyboard -----------------------------------------------------------
   root.addEventListener('keydown', function (e) {
     var k = e.code;
-    // Let Space/Enter activate a focused control instead of hijacking it globally.
     var tag = (e.target && e.target.tagName) || '';
-    if ((k === 'Space' || k === 'Enter') && (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A')) return;
+    // Typing in a text field (initials) must not trigger any game shortcut.
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+    // Let Space/Enter activate a focused control instead of hijacking it globally.
+    if ((k === 'Space' || k === 'Enter') && (tag === 'BUTTON' || tag === 'A')) return;
     if (k === 'KeyM') { toggleMute(); return; }
     if (game.state === 'playing') {
       if (k === 'Escape' || k === 'Space') { e.preventDefault(); game.pause(); showMenu('pause'); }
@@ -225,6 +227,13 @@
   // ---- loop ---------------------------------------------------------------
   // ---- Gamepad (physical arcade sticks / controllers) --------------------
   var gpPrev = {}, lastState = null;
+  function focusPick(picks, delta) {
+    if (!picks.length) return;
+    var idx = -1;
+    for (var i = 0; i < picks.length; i++) if (picks[i] === document.activeElement) { idx = i; break; }
+    idx = idx < 0 ? (delta > 0 ? 0 : picks.length - 1) : (idx + delta + picks.length) % picks.length;
+    picks[idx].focus();
+  }
   function pollGamepad() {
     if (!root.navigator || !navigator.getGamepads) return;
     var pads = navigator.getGamepads(), gp = null;
@@ -238,10 +247,22 @@
     else if (ax && (Math.abs(ax[0] || 0) > 0.5 || Math.abs(ax[1] || 0) > 0.5)) {
       dir = Math.abs(ax[0]) > Math.abs(ax[1]) ? (ax[0] > 0 ? 'right' : 'left') : (ax[1] > 0 ? 'down' : 'up');
     }
-    if (dir) input.setTouchDir(dir);
+    var playing = game.state === 'playing' || game.state === 'attract';
+    if (dir && playing) input.setTouchDir(dir);
     function edge(idx) { var p = b[idx] && b[idx].pressed; var was = gpPrev[idx]; gpPrev[idx] = p; return p && !was; }
-    if (edge(0)) deckA();                 // A / cross
-    if (edge(1)) deckB();                 // B / circle
+    // On the difficulty screen, the stick/d-pad moves focus between the picks.
+    if (!playing && menu === 'diff') {
+      var picks = document.querySelectorAll('.pick');
+      var su = (ax[1] || 0) < -0.5, sd = (ax[1] || 0) > 0.5;
+      var upE = edge(12) || (su && !gpPrev.su), dnE = edge(13) || (sd && !gpPrev.sd);
+      gpPrev.su = su; gpPrev.sd = sd;
+      if (upE) focusPick(picks, -1); else if (dnE) focusPick(picks, 1);
+    }
+    if (edge(0)) {                        // A / cross = confirm
+      if (!playing && menu === 'diff' && document.activeElement && document.activeElement.classList.contains('pick')) document.activeElement.click();
+      else deckA();
+    }
+    if (edge(1)) deckB();                 // B / circle = pause/back
     if (edge(9)) { if (game.state === 'playing') { game.pause(); showMenu('pause'); } else if (menu === 'title') showMenu('diff'); else if (menu === 'diff') beginGame(game.diff || 'normal'); } // start
   }
 

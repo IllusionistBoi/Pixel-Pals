@@ -104,9 +104,13 @@
     // keep corridors flanking the house connected
     grid[pcy][pcx - 3 > 0 ? pcx - 3 : 1] = 1;
 
-    // 7) Connectivity repair — flood from a known corridor, reconnect any pocket.
-    var startCell = nearestOpen(grid, 1, rows - 2, cols, rows, house);
-    repair(grid, cols, rows, startCell, house);
+    // 7) Force perfect left-right symmetry (the braid/repair mutated both halves
+    //    independently). The house/tunnels/ring are already centred, so a final
+    //    mirror + centre-stitch is symmetric; the perimeter ring keeps everything
+    //    connected, so repair is a no-op and symmetry survives.
+    for (var my = 0; my < rows; my++) for (var mx = 0; mx < half; mx++) grid[my][cols - 1 - mx] = grid[my][mx];
+    for (var sy2 = 1; sy2 < rows - 1; sy2 += 2) if (grid[sy2][half - 1] === 0 || grid[sy2][half + 1] === 0) grid[sy2][half] = 0;
+    repair(grid, cols, rows, nearestOpen(grid, 1, rows - 2, cols, rows, house), house);
 
     // Spawns.
     var pomStart = nearestOpen(grid, pcx, rows - 2, cols, rows, house);

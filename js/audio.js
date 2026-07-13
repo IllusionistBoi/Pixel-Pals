@@ -126,6 +126,7 @@
       // The signature cue: a soft music-box ping on every real BFS recompute.
       // `closeness` 0..1 (1 = Eater right on top of Pom) → higher, more dread.
       ping: function (closeness) {
+        if (!unlocked) return;
         var f = 380 + Math.min(1, Math.max(0, closeness)) * 900;
         var t = now();
         var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
@@ -139,6 +140,7 @@
       },
       // Eater footstep — a low-passed wood-block, tempo-locked by the caller.
       step: function () {
+        if (!unlocked) return;
         var t = now();
         var src = ac.createBufferSource(); src.buffer = noiseBuf;
         var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 380; bp.Q.value = 6;
@@ -210,7 +212,7 @@
       music.playing = true;
       music._step = 0;
       musicGain.gain.cancelScheduledValues(now());
-      musicGain.gain.setTargetAtTime(muted ? 0 : 0.5, now(), 0.5);
+      musicGain.gain.setTargetAtTime(0.5, now(), 0.5); // master gain is the mute gate
       musicTick();
     };
     music.stop = function () {

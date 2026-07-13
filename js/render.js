@@ -24,9 +24,11 @@
     this.grid = grid; this.cols = cols; this.rows = rows;
     this.tunnelRows = (opts && opts.tunnelRows) || [];
     this.pen = opts && opts.pen;
-    // Reserve room for the marquee, HUD bars, control deck + fineprint so the
-    // whole cabinet fits the viewport without clipping.
-    var maxW = Math.min(root.innerWidth - 80, 1150);
+    // Size to the CAPPED cabinet body (~820px), not the raw viewport, so the
+    // backing canvas isn't oversized then CSS-downscaled. Refresh DPR so zoom /
+    // monitor changes re-bake crisply.
+    this.dpr = Math.min(root.devicePixelRatio || 1, 2);
+    var maxW = Math.min(root.innerWidth - 80, 764);
     var maxH = root.innerHeight - 330;
     var cell = Math.floor(Math.min(maxW / cols, maxH / rows));
     this.cell = U.clamp(cell, 12, 40);
@@ -158,9 +160,9 @@
     ctx.beginPath(); ctx.moveTo(tx - cell * 0.2, ty); ctx.lineTo(tx + cell * 0.2, ty); ctx.moveTo(tx, ty - cell * 0.2); ctx.lineTo(tx, ty + cell * 0.2); ctx.stroke();
     // label banner
     ctx.globalAlpha = 1; ctx.shadowBlur = cell * 0.35; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = 'bold ' + Math.round(cell * 0.52) + 'px "Space Mono", ui-monospace, monospace';
+    ctx.font = 'bold ' + Math.round(cell * 0.52) + 'px "VT323", "Space Mono", ui-monospace, monospace';
     ctx.fillStyle = col; ctx.fillText(a.label, this.w / 2, cell * 0.5);
-    ctx.font = Math.round(cell * 0.34) + 'px "Space Mono", ui-monospace, monospace';
+    ctx.font = Math.round(cell * 0.34) + 'px "VT323", "Space Mono", ui-monospace, monospace';
     ctx.fillStyle = T.css('white'); ctx.shadowBlur = 0; ctx.globalAlpha = 0.7;
     ctx.fillText('LIVE BREADTH-FIRST SEARCH', this.w / 2, cell * 1.15);
     ctx.restore();
@@ -260,7 +262,7 @@
   Renderer.prototype.drawFloatText = function (ctx, state) {
     if (!state.floatText) return;
     var cell = this.cell;
-    ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold ' + (cell * 0.6) + 'px "Space Mono", monospace';
+    ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold ' + (cell * 0.6) + 'px "VT323", "Space Mono", monospace';
     for (var i = 0; i < state.floatText.length; i++) {
       var f = state.floatText[i], a = 1 - f.t;
       ctx.fillStyle = T.css('frightPale', a);
@@ -273,7 +275,7 @@
     var cell = this.cell;
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = T.css('neon'); ctx.shadowColor = T.css('neon'); ctx.shadowBlur = cell;
-    ctx.font = 'bold ' + (cell * 1.0) + 'px "Space Mono", monospace';
+    ctx.font = 'bold ' + (cell * 1.0) + 'px "VT323", "Space Mono", monospace';
     ctx.fillText('READY!', this.w / 2, this.h * 0.62);
     ctx.restore();
   };
