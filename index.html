@@ -54,20 +54,21 @@
         <div class="overlays">
           <!-- TITLE / attract -->
           <section class="ov ov--title" id="screen-title" role="dialog" aria-label="Pixel Pals title screen">
-            <h2 class="ov__logo">PIXEL PALS</h2>
-            <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
-            <div class="ghostrow">
-              <span class="grow g-red"></span><span class="gname">BLINKY</span>
-              <span class="grow g-pink"></span><span class="gname">PINKY</span>
-              <span class="grow g-cyan"></span><span class="gname">INKY</span>
-              <span class="grow g-orange"></span><span class="gname">CLYDE</span>
+            <div class="title-menu">
+              <p class="ov__tag">FOUR GHOSTS · ONE REAL BREADTH-FIRST SEARCH</p>
+              <ul class="ghostrow" aria-label="Meet the ghost crew">
+                <li><span class="grow g-red" aria-hidden="true"></span><span class="gname">BLINKY</span><span class="gtrait">LOCKS ON</span></li>
+                <li><span class="grow g-pink" aria-hidden="true"></span><span class="gname">PINKY</span><span class="gtrait">CUTS AHEAD</span></li>
+                <li><span class="grow g-cyan" aria-hidden="true"></span><span class="gname">INKY</span><span class="gtrait">DOUBLE-TEAMS</span></li>
+                <li><span class="grow g-orange" aria-hidden="true"></span><span class="gname">CLYDE</span><span class="gtrait">CHASES, THEN BAILS</span></li>
+              </ul>
+              <button class="press" id="btn-start">PRESS&nbsp;START</button>
+              <div class="ov__links">
+                <button class="mini" id="btn-how">HOW TO PLAY</button>
+                <button class="mini" id="btn-mute-title">♪ SOUND</button>
+              </div>
+              <p class="coin" id="coin">INSERT COIN</p>
             </div>
-            <button class="press" id="btn-start">PRESS&nbsp;START</button>
-            <div class="ov__links">
-              <button class="mini" id="btn-how">HOW TO PLAY</button>
-              <button class="mini" id="btn-mute-title">♪ SOUND</button>
-            </div>
-            <p class="coin" id="coin">INSERT COIN</p>
           </section>
 
           <!-- DIFFICULTY -->
@@ -87,7 +88,7 @@
             <button class="press" id="btn-resume">RESUME</button>
             <div class="ov__links">
               <button class="mini" id="btn-restart">RESTART</button>
-              <button class="mini" id="btn-quit">QUIT</button>
+              <button class="mini mini--exit" id="btn-quit">LEAVE CABINET · BACK TO TITLE</button>
               <button class="mini" id="btn-mute">♪ MUTE</button>
             </div>
           </section>
@@ -126,14 +127,26 @@
 
     <!-- Control deck -->
     <div class="deck">
-      <button class="joystick" id="joystick" type="button" aria-label="Move Pom"><span class="stick"></span></button>
-      <div class="btns">
-        <button class="ab a" type="button" aria-label="Start or confirm"></button>
-        <button class="ab b" type="button" aria-label="Pause or back"></button>
+      <div class="deck__control">
+        <span class="deck__label"><strong>POM PILOT</strong><small>MOVE POM</small></span>
+        <button class="joystick" id="joystick" type="button" aria-label="Pom pilot: move Pom"><span class="stick"></span></button>
       </div>
-      <button class="coinslot" type="button" aria-label="Insert coin"></button>
+      <div class="btns">
+        <div class="deck__control">
+          <span class="deck__label"><strong>READY, POM?</strong><small>START / CONFIRM</small></span>
+          <button class="ab a" type="button" aria-label="Ready, Pom? Start or confirm"></button>
+        </div>
+        <div class="deck__control">
+          <span class="deck__label"><strong>GHOST BREAK</strong><small>PAUSE / BACK</small></span>
+          <button class="ab b" type="button" aria-label="Ghost break: pause or back"></button>
+        </div>
+      </div>
+      <div class="deck__control">
+        <span class="deck__label"><strong>FEED CABINET</strong><small>INSERT A CREDIT</small></span>
+        <button class="coinslot" type="button" aria-label="Feed the cabinet: insert a credit"></button>
+      </div>
     </div>
-    <p class="fineprint">© PIXEL PALS · from a C++ console game · made with a real BFS ♥</p>
+    <p class="fineprint">KEYS · ARROWS / WASD MOVE POM · SPACE / ESC PAUSE · M MUTE</p>
   </main>
 
   <script src="js/utils.js"></script>
