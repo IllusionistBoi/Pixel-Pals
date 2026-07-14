@@ -27,3 +27,10 @@
 - [x] Fresh desktop and responsive screenshots captured with Playwright.
 - [x] README now documents GitHub Pages and Vercel deployment paths.
 - [x] Confirm the Vercel account is authenticated and the production deployment is ready.
+
+## GitHub profile hero SVGs
+
+- [x] Define a shared 1180x610 SVG layout and animation system.
+- [x] Generate matching dark and light palette variants.
+- [x] Render-check both assets for valid SVG, responsive sizing, and SMIL-only motion.
+- [x] Commit and push the profile assets.
