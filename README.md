@@ -20,21 +20,6 @@ the roster, controls, or start button.
 
 ![Pixel Pals responsive title screen](docs/screenshots/responsive-title.png)
 
-## GitHub profile hero
-
-The repository also includes a responsive, SMIL-animated profile banner in both
-GitHub palettes. It is pure SVG—no JavaScript, fonts, or external assets:
-
-```html
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/profile-hero/dark.svg">
-  <img src="docs/profile-hero/light.svg" alt="Animated developer profile hero">
-</picture>
-```
-
-- [Dark SVG](docs/profile-hero/dark.svg)
-- [Light SVG](docs/profile-hero/light.svg)
-
 ## Play
 
 No install, build step, or external assets are required. Serve the folder and
@@ -95,7 +80,6 @@ js/                  game systems (see CLAUDE.md for the file map)
 legacy/              the original C++ console game
 dist/pixel-pals.html single self-contained build
 docs/screenshots/    README screenshots captured from the current UI
-docs/profile-hero/   dark/light animated GitHub profile banners
 DESIGN.md            retro-arcade art brief
 PLAN.md              build history
 CLAUDE.md            architecture and conventions
