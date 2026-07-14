@@ -15,11 +15,6 @@ pathfinding system is live.
 
 ![Pixel Pals arcade cabinet title screen](docs/screenshots/title-screen.png)
 
-The layout also scales down cleanly for a phone-sized viewport without losing
-the roster, controls, or start button.
-
-![Pixel Pals responsive title screen](docs/screenshots/responsive-title.png)
-
 ## Play
 
 No install, build step, or external assets are required. Serve the folder and
