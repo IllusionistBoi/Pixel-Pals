@@ -1,0 +1,6 @@
+# tool/agent scratch
+.playwright-mcp/
+.codex/
+*.log
+
+.vercel
